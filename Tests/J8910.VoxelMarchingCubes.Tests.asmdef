@@ -1,0 +1,21 @@
+{
+    "name": "J8910.VoxelMarchingCubes.Tests",
+    "rootNamespace": "VoxelMarchingCubes.Tests",
+    "references": [
+        "J8910.VoxelMarchingCubes"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

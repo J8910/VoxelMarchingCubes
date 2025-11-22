@@ -1,8 +1,12 @@
 {
-    "name": "J8910.VoxelMarchingCubes",
-    "rootNamespace": "VoxelMarchingCubes",
-    "references": [],
-    "includePlatforms": [],
+    "name": "J8910.VoxelMarchingCubes.Editor",
+    "rootNamespace": "VoxelMarchingCubes.Editor",
+    "references": [
+        "J8910.VoxelMarchingCubes"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
