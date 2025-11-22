@@ -3,7 +3,7 @@ using VoxelMarchingCubes.Runtime;
 
 namespace VoxelMarchingCubes.Tools
 {
-    [RequireComponent(typeof(SphereCollider))]
+    [RequireComponent(typeof(SphereCollider),typeof(Rigidbody))]
     public class TerrainToolController : MonoBehaviour
     {
         #region Constants
@@ -69,6 +69,7 @@ namespace VoxelMarchingCubes.Tools
         #region Private Fields
         
         private SphereCollider _triggerCollider;
+        private Rigidbody _rigidbody;
         private ITerrainTools _currentTool;
         private IModificableVoxel _targetTerrain;
         private float _lastActionTime;
@@ -238,6 +239,9 @@ namespace VoxelMarchingCubes.Tools
         private void InitializeComponents()
         {
             _triggerCollider = GetComponent<SphereCollider>();
+            _rigidbody = GetComponent<Rigidbody>();
+            _rigidbody.isKinematic = true;
+            _rigidbody.useGravity = false;
             _triggerCollider.isTrigger = true;
             UpdateColliderSize();
         }
