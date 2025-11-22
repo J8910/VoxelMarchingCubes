@@ -1,0 +1,14 @@
+{
+    "name": "J8910.VoxelMarchingCubes",
+    "rootNamespace": "VoxelMarchingCubes ",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
