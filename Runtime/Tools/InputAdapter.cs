@@ -1,8 +1,6 @@
-﻿using UnityEngine;
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
-#endif
+﻿using System;
+using System.Reflection;
+using UnityEngine;
 
 // Adapter to bridge Legacy Input and the new Input System without throwing in projects
 // configured to use the new Input System only.
@@ -13,169 +11,203 @@ namespace VoxelMarchingCubes.Tools
     {
         public static bool GetKey(KeyCode key)
         {
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-            return GetKey_InputSystem(key);
-#else
+            // Try new Input System via reflection so we don't require the package at compile time.
+            try
+            {
+                var btn = ResolveButtonControlReflective(key);
+                if (btn != null)
+                {
+                    var isPressedProp = btn.GetType().GetProperty("isPressed", BindingFlags.Public | BindingFlags.Instance);
+                    if (isPressedProp != null)
+                    {
+                        return (bool)isPressedProp.GetValue(btn);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore and fall back
+            }
+
+            // Fallback to legacy input
             return Input.GetKey(key);
-#endif
         }
 
         public static bool GetKeyDown(KeyCode key)
         {
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-            return GetKeyDown_InputSystem(key);
-#else
-            return Input.GetKeyDown(key);
-#endif
-        }
-
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        private static bool GetKey_InputSystem(KeyCode key)
-        {
-            var btn = ResolveButtonControl(key);
-            return btn != null && btn.isPressed;
-        }
-
-        private static bool GetKeyDown_InputSystem(KeyCode key)
-        {
-            var btn = ResolveButtonControl(key);
-            return btn != null && btn.wasPressedThisFrame;
-        }
-
-        private static ButtonControl ResolveButtonControl(KeyCode key)
-        {
-            var kb = Keyboard.current;
-            var mouse = Mouse.current;
-
-            // Mouse buttons
-            if (mouse != null)
+            // Try new Input System via reflection so we don't require the package at compile time.
+            try
             {
-                switch (key)
+                var btn = ResolveButtonControlReflective(key);
+                if (btn != null)
                 {
-                    case KeyCode.Mouse0: return mouse.leftButton;
-                    case KeyCode.Mouse1: return mouse.rightButton;
-                    case KeyCode.Mouse2: return mouse.middleButton;
-                    case KeyCode.Mouse3: return mouse.backButton;
-                    case KeyCode.Mouse4: return mouse.forwardButton;
+                    var wasPressedThisFrameProp = btn.GetType().GetProperty("wasPressedThisFrame", BindingFlags.Public | BindingFlags.Instance);
+                    if (wasPressedThisFrameProp != null)
+                    {
+                        return (bool)wasPressedThisFrameProp.GetValue(btn);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore and fall back
+            }
+
+            // Fallback to legacy input
+            return Input.GetKeyDown(key);
+        }
+
+        // Reflective resolution of a ButtonControl-like object when the new Input System is present.
+        // Returns null if the package/types are not available, or if the key is unmapped.
+        private static object ResolveButtonControlReflective(KeyCode key)
+        {
+            // Get types by name without compile-time reference
+            var keyboardType = Type.GetType("UnityEngine.InputSystem.Keyboard, Unity.InputSystem");
+            var mouseType = Type.GetType("UnityEngine.InputSystem.Mouse, Unity.InputSystem");
+            if (keyboardType == null && mouseType == null)
+                return null;
+
+            object mouse = null;
+            if (mouseType != null)
+            {
+                var currentProp = mouseType.GetProperty("current", BindingFlags.Public | BindingFlags.Static);
+                mouse = currentProp?.GetValue(null);
+                if (mouse != null)
+                {
+                    // Mouse buttons
+                    switch (key)
+                    {
+                        case KeyCode.Mouse0: return mouseType.GetProperty("leftButton")?.GetValue(mouse);
+                        case KeyCode.Mouse1: return mouseType.GetProperty("rightButton")?.GetValue(mouse);
+                        case KeyCode.Mouse2: return mouseType.GetProperty("middleButton")?.GetValue(mouse);
+                        case KeyCode.Mouse3: return mouseType.GetProperty("backButton")?.GetValue(mouse);
+                        case KeyCode.Mouse4: return mouseType.GetProperty("forwardButton")?.GetValue(mouse);
+                    }
                 }
             }
 
-            if (kb == null) return null;
+            if (keyboardType == null)
+                return null;
 
-            // Common keys and modifiers
+            var kbCurrent = keyboardType.GetProperty("current", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+            if (kbCurrent == null)
+                return null;
+
+            // local helper to get a key property by name
+            object Key(string name) => keyboardType.GetProperty(name, BindingFlags.Public | BindingFlags.Instance)?.GetValue(kbCurrent);
+
             switch (key)
             {
-                case KeyCode.Space: return kb.spaceKey;
+                // Common keys and modifiers
+                case KeyCode.Space: return Key("spaceKey");
                 case KeyCode.Return:
-                case KeyCode.KeypadEnter: return kb.enterKey;
-                case KeyCode.Escape: return kb.escapeKey;
-                case KeyCode.Backspace: return kb.backspaceKey;
-                case KeyCode.Tab: return kb.tabKey;
+                case KeyCode.KeypadEnter: return Key("enterKey");
+                case KeyCode.Escape: return Key("escapeKey");
+                case KeyCode.Backspace: return Key("backspaceKey");
+                case KeyCode.Tab: return Key("tabKey");
 
-                case KeyCode.LeftShift: return kb.leftShiftKey;
-                case KeyCode.RightShift: return kb.rightShiftKey;
-                case KeyCode.LeftControl: return kb.leftCtrlKey;
-                case KeyCode.RightControl: return kb.rightCtrlKey;
-                case KeyCode.LeftAlt: return kb.leftAltKey;
-                case KeyCode.RightAlt: return kb.rightAltKey;
+                case KeyCode.LeftShift: return Key("leftShiftKey");
+                case KeyCode.RightShift: return Key("rightShiftKey");
+                case KeyCode.LeftControl: return Key("leftCtrlKey");
+                case KeyCode.RightControl: return Key("rightCtrlKey");
+                case KeyCode.LeftAlt: return Key("leftAltKey");
+                case KeyCode.RightAlt: return Key("rightAltKey");
 
-                case KeyCode.LeftArrow: return kb.leftArrowKey;
-                case KeyCode.RightArrow: return kb.rightArrowKey;
-                case KeyCode.UpArrow: return kb.upArrowKey;
-                case KeyCode.DownArrow: return kb.downArrowKey;
+                case KeyCode.LeftArrow: return Key("leftArrowKey");
+                case KeyCode.RightArrow: return Key("rightArrowKey");
+                case KeyCode.UpArrow: return Key("upArrowKey");
+                case KeyCode.DownArrow: return Key("downArrowKey");
 
-                case KeyCode.CapsLock: return kb.capsLockKey;
-                case KeyCode.Numlock: return kb.numLockKey;
-                case KeyCode.ScrollLock: return kb.scrollLockKey;
+                case KeyCode.CapsLock: return Key("capsLockKey");
+                case KeyCode.Numlock: return Key("numLockKey");
+                case KeyCode.ScrollLock: return Key("scrollLockKey");
 
-                case KeyCode.Insert: return kb.insertKey;
-                case KeyCode.Delete: return kb.deleteKey;
-                case KeyCode.Home: return kb.homeKey;
-                case KeyCode.End: return kb.endKey;
-                case KeyCode.PageUp: return kb.pageUpKey;
-                case KeyCode.PageDown: return kb.pageDownKey;
-                case KeyCode.Print: return kb.printScreenKey;
-                case KeyCode.Pause: return kb.pauseKey;
+                case KeyCode.Insert: return Key("insertKey");
+                case KeyCode.Delete: return Key("deleteKey");
+                case KeyCode.Home: return Key("homeKey");
+                case KeyCode.End: return Key("endKey");
+                case KeyCode.PageUp: return Key("pageUpKey");
+                case KeyCode.PageDown: return Key("pageDownKey");
+                case KeyCode.Print: return Key("printScreenKey");
+                case KeyCode.Pause: return Key("pauseKey");
 
                 // Function keys
-                case KeyCode.F1: return kb.f1Key;
-                case KeyCode.F2: return kb.f2Key;
-                case KeyCode.F3: return kb.f3Key;
-                case KeyCode.F4: return kb.f4Key;
-                case KeyCode.F5: return kb.f5Key;
-                case KeyCode.F6: return kb.f6Key;
-                case KeyCode.F7: return kb.f7Key;
-                case KeyCode.F8: return kb.f8Key;
-                case KeyCode.F9: return kb.f9Key;
-                case KeyCode.F10: return kb.f10Key;
-                case KeyCode.F11: return kb.f11Key;
-                case KeyCode.F12: return kb.f12Key;
+                case KeyCode.F1: return Key("f1Key");
+                case KeyCode.F2: return Key("f2Key");
+                case KeyCode.F3: return Key("f3Key");
+                case KeyCode.F4: return Key("f4Key");
+                case KeyCode.F5: return Key("f5Key");
+                case KeyCode.F6: return Key("f6Key");
+                case KeyCode.F7: return Key("f7Key");
+                case KeyCode.F8: return Key("f8Key");
+                case KeyCode.F9: return Key("f9Key");
+                case KeyCode.F10: return Key("f10Key");
+                case KeyCode.F11: return Key("f11Key");
+                case KeyCode.F12: return Key("f12Key");
             }
 
             // Letters A-Z
             switch (key)
             {
-                case KeyCode.A: return kb.aKey;
-                case KeyCode.B: return kb.bKey;
-                case KeyCode.C: return kb.cKey;
-                case KeyCode.D: return kb.dKey;
-                case KeyCode.E: return kb.eKey;
-                case KeyCode.F: return kb.fKey;
-                case KeyCode.G: return kb.gKey;
-                case KeyCode.H: return kb.hKey;
-                case KeyCode.I: return kb.iKey;
-                case KeyCode.J: return kb.jKey;
-                case KeyCode.K: return kb.kKey;
-                case KeyCode.L: return kb.lKey;
-                case KeyCode.M: return kb.mKey;
-                case KeyCode.N: return kb.nKey;
-                case KeyCode.O: return kb.oKey;
-                case KeyCode.P: return kb.pKey;
-                case KeyCode.Q: return kb.qKey;
-                case KeyCode.R: return kb.rKey;
-                case KeyCode.S: return kb.sKey;
-                case KeyCode.T: return kb.tKey;
-                case KeyCode.U: return kb.uKey;
-                case KeyCode.V: return kb.vKey;
-                case KeyCode.W: return kb.wKey;
-                case KeyCode.X: return kb.xKey;
-                case KeyCode.Y: return kb.yKey;
-                case KeyCode.Z: return kb.zKey;
+                case KeyCode.A: return Key("aKey");
+                case KeyCode.B: return Key("bKey");
+                case KeyCode.C: return Key("cKey");
+                case KeyCode.D: return Key("dKey");
+                case KeyCode.E: return Key("eKey");
+                case KeyCode.F: return Key("fKey");
+                case KeyCode.G: return Key("gKey");
+                case KeyCode.H: return Key("hKey");
+                case KeyCode.I: return Key("iKey");
+                case KeyCode.J: return Key("jKey");
+                case KeyCode.K: return Key("kKey");
+                case KeyCode.L: return Key("lKey");
+                case KeyCode.M: return Key("mKey");
+                case KeyCode.N: return Key("nKey");
+                case KeyCode.O: return Key("oKey");
+                case KeyCode.P: return Key("pKey");
+                case KeyCode.Q: return Key("qKey");
+                case KeyCode.R: return Key("rKey");
+                case KeyCode.S: return Key("sKey");
+                case KeyCode.T: return Key("tKey");
+                case KeyCode.U: return Key("uKey");
+                case KeyCode.V: return Key("vKey");
+                case KeyCode.W: return Key("wKey");
+                case KeyCode.X: return Key("xKey");
+                case KeyCode.Y: return Key("yKey");
+                case KeyCode.Z: return Key("zKey");
             }
 
             // Top-row digits 0-9
             switch (key)
             {
-                case KeyCode.Alpha0: return kb.digit0Key;
-                case KeyCode.Alpha1: return kb.digit1Key;
-                case KeyCode.Alpha2: return kb.digit2Key;
-                case KeyCode.Alpha3: return kb.digit3Key;
-                case KeyCode.Alpha4: return kb.digit4Key;
-                case KeyCode.Alpha5: return kb.digit5Key;
-                case KeyCode.Alpha6: return kb.digit6Key;
-                case KeyCode.Alpha7: return kb.digit7Key;
-                case KeyCode.Alpha8: return kb.digit8Key;
-                case KeyCode.Alpha9: return kb.digit9Key;
+                case KeyCode.Alpha0: return Key("digit0Key");
+                case KeyCode.Alpha1: return Key("digit1Key");
+                case KeyCode.Alpha2: return Key("digit2Key");
+                case KeyCode.Alpha3: return Key("digit3Key");
+                case KeyCode.Alpha4: return Key("digit4Key");
+                case KeyCode.Alpha5: return Key("digit5Key");
+                case KeyCode.Alpha6: return Key("digit6Key");
+                case KeyCode.Alpha7: return Key("digit7Key");
+                case KeyCode.Alpha8: return Key("digit8Key");
+                case KeyCode.Alpha9: return Key("digit9Key");
             }
 
             // Numpad digits
             switch (key)
             {
-                case KeyCode.Keypad0: return kb.numpad0Key;
-                case KeyCode.Keypad1: return kb.numpad1Key;
-                case KeyCode.Keypad2: return kb.numpad2Key;
-                case KeyCode.Keypad3: return kb.numpad3Key;
-                case KeyCode.Keypad4: return kb.numpad4Key;
-                case KeyCode.Keypad5: return kb.numpad5Key;
-                case KeyCode.Keypad6: return kb.numpad6Key;
-                case KeyCode.Keypad7: return kb.numpad7Key;
-                case KeyCode.Keypad8: return kb.numpad8Key;
-                case KeyCode.Keypad9: return kb.numpad9Key;
+                case KeyCode.Keypad0: return Key("numpad0Key");
+                case KeyCode.Keypad1: return Key("numpad1Key");
+                case KeyCode.Keypad2: return Key("numpad2Key");
+                case KeyCode.Keypad3: return Key("numpad3Key");
+                case KeyCode.Keypad4: return Key("numpad4Key");
+                case KeyCode.Keypad5: return Key("numpad5Key");
+                case KeyCode.Keypad6: return Key("numpad6Key");
+                case KeyCode.Keypad7: return Key("numpad7Key");
+                case KeyCode.Keypad8: return Key("numpad8Key");
+                case KeyCode.Keypad9: return Key("numpad9Key");
             }
 
-            // If unmapped, return null (callers treat as not pressed)
             return null;
         }
-#endif
     }
 }
