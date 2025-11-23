@@ -24,11 +24,11 @@ To install a specific version, add the version tag:
 https://github.com/J8910/VoxelMarchingCubes.git#v0.4.1
 ```
 
-### Option 2: Download Unity Package
+### Option 2: Download Package Archive
 
 1. Go to the [Releases](https://github.com/J8910/VoxelMarchingCubes/releases) page
-2. Download the latest `.unitypackage` file
-3. Extract the contents into your Unity project's `Assets` folder or `Packages` folder
+2. Download the latest `.zip` or `.tar.gz` file
+3. Extract the contents into your Unity project's `Packages` folder (for UPM) or `Assets` folder
 
 ## Creating a Release
 
@@ -44,9 +44,9 @@ This repository uses GitHub Actions to automatically create Unity package releas
    git push origin v0.4.1
    ```
 4. GitHub Actions will automatically:
-   - Build the Unity package
+   - Build the package archive (zip and tar.gz)
    - Create a GitHub release
-   - Upload the `.unitypackage` file as a release asset
+   - Upload the package files as release assets
 
 ### Manual Release
 

@@ -29,11 +29,29 @@ jobs:
       - name: Create Unity Package Archive
         run: |
           mkdir -p build
-          PACKAGE_NAME="VoxelMarchingCubes-v${{ steps.version.outputs.version }}.unitypackage"
+          PACKAGE_NAME="VoxelMarchingCubes-v${{ steps.version.outputs.version }}"
 
-          # Create package archive with all necessary files
+          # Create package archive with all necessary files for UPM
           # Include all meta files to preserve Unity asset GUIDs
-          tar -czf "build/$PACKAGE_NAME" \
+          zip -r "build/${PACKAGE_NAME}.zip" \
+            Runtime/ \
+            Editor/ \
+            Tests/ \
+            package.json \
+            package.json.meta \
+            LICENSE \
+            LICENSE.meta \
+            README.md \
+            README.md.meta \
+            CHANGELOG.md \
+            CHANGELOG.md.meta \
+            Runtime.meta \
+            Editor.meta \
+            Tests.meta \
+            -x "*.git*"
+
+          # Also create a tar.gz version
+          tar -czf "build/${PACKAGE_NAME}.tar.gz" \
             Runtime/ \
             Editor/ \
             Tests/ \
@@ -49,7 +67,7 @@ jobs:
             Editor.meta \
             Tests.meta
 
-          echo "Created package: build/$PACKAGE_NAME"
+          echo "Created packages:"
           ls -lh build/
 
       - name: Create Release
@@ -60,16 +78,19 @@ jobs:
             ## VoxelMarchingCubes ${{ github.ref_name }}
 
             ### Installation
-            Download the `.unitypackage` file below and extract it into your Unity project's Assets folder.
 
-            Alternatively, you can install this package via the Unity Package Manager:
+            #### Via Unity Package Manager (Recommended)
             1. Open the Package Manager (Window > Package Manager)
             2. Click the + button and select "Add package from git URL"
             3. Enter: `https://github.com/J8910/VoxelMarchingCubes.git#${{ github.ref_name }}`
 
+            #### Via Download
+            Download the package archive below and extract it into your Unity project's `Packages` folder (for UPM) or `Assets` folder.
+
             ### Changes
             See [CHANGELOG.md](https://github.com/J8910/VoxelMarchingCubes/blob/main/CHANGELOG.md) for details.
           files: |
-            build/*.unitypackage
+            build/*.zip
+            build/*.tar.gz
           draft: false
           prerelease: false
