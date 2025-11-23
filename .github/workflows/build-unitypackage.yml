@@ -31,41 +31,15 @@ jobs:
           mkdir -p build
           PACKAGE_NAME="VoxelMarchingCubes-v${{ steps.version.outputs.version }}"
 
-          # Create package archive with all necessary files for UPM
-          # Include all meta files to preserve Unity asset GUIDs
-          zip -r "build/${PACKAGE_NAME}.zip" \
-            Runtime/ \
-            Editor/ \
-            Tests/ \
-            package.json \
-            package.json.meta \
-            LICENSE \
-            LICENSE.meta \
-            README.md \
-            README.md.meta \
-            CHANGELOG.md \
-            CHANGELOG.md.meta \
-            Runtime.meta \
-            Editor.meta \
-            Tests.meta \
-            -x "*.git*"
+          # Define file list for both archives
+          FILES="Runtime/ Editor/ Tests/ package.json package.json.meta LICENSE LICENSE.meta README.md README.md.meta CHANGELOG.md CHANGELOG.md.meta Runtime.meta Editor.meta Tests.meta"
 
-          # Also create a tar.gz version
-          tar -czf "build/${PACKAGE_NAME}.tar.gz" \
-            Runtime/ \
-            Editor/ \
-            Tests/ \
-            package.json \
-            package.json.meta \
-            LICENSE \
-            LICENSE.meta \
-            README.md \
-            README.md.meta \
-            CHANGELOG.md \
-            CHANGELOG.md.meta \
-            Runtime.meta \
-            Editor.meta \
-            Tests.meta
+          # Create zip archive
+          # Include all meta files to preserve Unity asset GUIDs
+          zip -r "build/${PACKAGE_NAME}.zip" $FILES -x "*.git*"
+
+          # Create tar.gz archive
+          tar --exclude="*.git*" -czf "build/${PACKAGE_NAME}.tar.gz" $FILES
 
           echo "Created packages:"
           ls -lh build/
