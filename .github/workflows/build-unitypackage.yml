@@ -22,7 +22,7 @@ jobs:
       - name: Get version from package.json
         id: version
         run: |
-          VERSION=$(cat package.json | grep -oP '"version":\s*"\K[^"]+')
+          VERSION=$(jq -r '.version' package.json)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Package version: $VERSION"
 
