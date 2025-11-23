@@ -112,6 +112,14 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Core
                 return;
             }
             
+            // Avoid evaluating exposure before terrain has finished initializing its data
+            if (!terrain.IsInitialized)
+            {
+                if (enableLogging)
+                    Debug.Log($"[BuriedObject] Skipping exposure update for '{name}' because terrain isn't initialized yet.");
+                return;
+            }
+            
             if (_exposureDetector == null) InitializeDetector();
 
             if (autoDetectBounds)
@@ -124,8 +132,8 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Core
             if (Mathf.Abs(newExposure.Exposure - _currentExposure.Exposure) > 0.01f)
             {
                 _currentExposure = newExposure;
-                
-                events.OnExposureChanged?.Invoke(_currentExposure);
+                // Use event wrapper to ensure debug is printed when configured
+                events.InvokeExposureChanged(_currentExposure);
                 
                 CheckStateTransitions();
             }
@@ -184,7 +192,7 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Core
             if (!_hasBeenFullyExposed)
             {
                 _hasBeenFullyExposed = true;
-                events.OnFullyExposed?.Invoke(gameObject);
+                events.InvokeFullyExposed(gameObject, _currentExposure);
                 if (enableLogging)
                     Debug.Log($"{name} has been fully exposed! ({_currentExposure})");
             }
@@ -192,14 +200,14 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Core
         
         private void OnBecomePartiallyExposed()
         {
-            events.OnPartiallyExposed?.Invoke(gameObject, _currentExposure.Exposure);
+            events.InvokePartiallyExposed(gameObject, _currentExposure.Exposure, _currentExposure);
             if (enableLogging)
                 Debug.Log($"{name} is partially exposed ({_currentExposure})");
         }
 
         private void OnBecomeCompletelyBuried()
         {
-            events.OnCompletelyBuried?.Invoke();
+            events.InvokeCompletelyBuried(_currentExposure);
             if (enableLogging)
                 Debug.Log($"{name} has become buried again ({_currentExposure})");
         }

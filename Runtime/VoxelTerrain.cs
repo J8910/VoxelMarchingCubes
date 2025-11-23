@@ -44,6 +44,7 @@ namespace VoxelMarchingCubes.Runtime
         [SerializeField] private Color chunkBoundsColor = new Color(1f, 0.5f, 0f, 0.2f);
         
         public event Action<Bounds> OnTerrainChanged;
+        public event Action OnTerrainInitialized;
         private IVoxelDensityGenerator _densityGenerator;
         private List<VoxelChunk> _chunks = new List<VoxelChunk>();
         private Dictionary<Vector2Int, VoxelChunk> _chunkMap = new Dictionary<Vector2Int, VoxelChunk>();
@@ -59,6 +60,7 @@ namespace VoxelMarchingCubes.Runtime
         public Vector3Int ChunkCount => chunkCount;
         public Vector3Int ChunkSize => chunkSize;
         public float IsoLevel => isoLevel;
+        public bool IsInitialized => _isInitialized;
         
         #endregion
         
@@ -133,6 +135,17 @@ namespace VoxelMarchingCubes.Runtime
             _densityGenerator = CreateDensityGenerator();
             GenerateChunks();
             _isInitialized = true;
+            try
+            {
+                OnTerrainInitialized?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                if (enableLogging)
+                {
+                    Debug.LogError($"[VoxelTerrain] Exception during OnTerrainInitialized invocation: {ex}");
+                }
+            }
         }
 
         protected virtual IVoxelDensityGenerator CreateDensityGenerator()

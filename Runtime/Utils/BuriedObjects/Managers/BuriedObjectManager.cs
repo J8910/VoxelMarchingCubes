@@ -116,6 +116,7 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Managers
             }
         
             voxelTerrain.OnTerrainChanged += HandleTerrainModification;
+            voxelTerrain.OnTerrainInitialized += HandleTerrainInitialized;
             _isSubscribed = true;
             if (enableLogging)
                 Debug.Log($"<color=green>[BuriedObjectManager]</color> ✓ Subscribed to terrain events from '{voxelTerrain.name}'");
@@ -126,6 +127,7 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Managers
             if (!_isSubscribed || voxelTerrain == null) return;
             
             voxelTerrain.OnTerrainChanged -= HandleTerrainModification;
+            voxelTerrain.OnTerrainInitialized -= HandleTerrainInitialized;
             _isSubscribed = false;
             
             if (enableLogging)
@@ -150,7 +152,11 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Managers
             
                 if (voxelTerrain != null)
                 {
-                    obj.UpdateExposure(voxelTerrain);
+                    // Only update exposure when terrain is fully initialized to avoid false positives at startup
+                    if (voxelTerrain.IsInitialized)
+                    {
+                        obj.UpdateExposure(voxelTerrain);
+                    }
                 }
                 else
                 {
@@ -257,6 +263,12 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Managers
                 Debug.LogWarning("[BuriedObjectManager] Terrain is null during modification event");
                 return;
             }
+            if (!voxelTerrain.IsInitialized)
+            {
+                if (enableLogging)
+                    Debug.LogWarning("[BuriedObjectManager] Ignoring terrain modification before initialization.");
+                return;
+            }
 
             HashSet<BuriedObject> objectsToUpdate = new();
             if (_spatialIndex == null)
@@ -287,6 +299,15 @@ namespace VoxelMarchingCubes.Utils.BuriedObjects.Managers
                     Debug.Log($"<color=cyan>[BuriedObjectManager]</color> Updating: {obj.name}");
                 obj.UpdateExposure(voxelTerrain);
             }
+        }
+
+        private void HandleTerrainInitialized()
+        {
+            if (enableLogging)
+                Debug.Log("<color=green>[BuriedObjectManager]</color> Terrain initialized. Rebuilding index and forcing initial update of all buried objects.");
+            InitializeSpatialIndex();
+            RebuildSpatialIndex();
+            ForceUpdateAll();
         }
 
         private void RefreshIndexBounds()
