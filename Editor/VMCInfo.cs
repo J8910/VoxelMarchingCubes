@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.PackageManager;
+#endif
 
 namespace VoxelMarchingCubes
 {
@@ -41,8 +45,8 @@ namespace VoxelMarchingCubes
 
             try
             {
-                // Build absolute path to package.json within this package under Assets.
-                var pkgPath = Path.Combine(Application.dataPath, "VoxelMarchingCubes", "package.json");
+                // Try to resolve package.json path for both development (Assets/) and UPM-installed (Packages/) cases.
+                var pkgPath = ResolvePackageJsonPath();
                 if (File.Exists(pkgPath))
                 {
                     var json = File.ReadAllText(pkgPath);
@@ -71,6 +75,91 @@ namespace VoxelMarchingCubes
             _version ??= "0.0.0";
             _author ??= "Unknown";
             _packageName ??= "com.j8910.voxelmarchingcubes";
+        }
+
+        private static string ResolvePackageJsonPath()
+        {
+            // Default fallback for dev environment under Assets
+            var defaultAssetsPath = Path.Combine(Application.dataPath, "VoxelMarchingCubes", "package.json");
+
+#if UNITY_EDITOR
+            try
+            {
+                // 1) If installed as a UPM package, try via PackageManager using known package name
+                const string kPackageName = "com.j8910.voxelmarchingcubes";
+                var packagesAssetPath = $"Packages/{kPackageName}";
+                var pInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(packagesAssetPath);
+                if (pInfo != null && !string.IsNullOrEmpty(pInfo.resolvedPath))
+                {
+                    var candidate = Path.Combine(pInfo.resolvedPath, "package.json");
+                    if (File.Exists(candidate)) return candidate;
+                }
+
+                // 2) Try to infer root from the location of this script asset (works in both Assets and Packages)
+                var guids = AssetDatabase.FindAssets("VMCInfo t:Script");
+                foreach (var guid in guids)
+                {
+                    var assetPath = AssetDatabase.GUIDToAssetPath(guid); // e.g., Assets/..../VMCInfo.cs or Packages/com.../Editor/VMCInfo.cs
+                    if (string.IsNullOrEmpty(assetPath)) continue;
+
+                    // Get directory and walk up until we find "Editor" folder, then take its parent as package root
+                    var dir = Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
+                    if (string.IsNullOrEmpty(dir)) continue;
+
+                    // Normalize to project absolute path
+                    string absDir;
+                    if (dir.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        absDir = Path.Combine(Application.dataPath, dir.Substring("Assets/".Length));
+                    }
+                    else if (dir.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Resolve Packages absolute root
+                        var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                        absDir = Path.Combine(projectRoot, dir);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    // Walk up to the package root (parent of Editor folder if present)
+                    var current = new DirectoryInfo(absDir);
+                    while (current != null && !string.Equals(current.Name, "Editor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // If we already are at the package root (has package.json), use it
+                        var pj = Path.Combine(current.FullName, "package.json");
+                        if (File.Exists(pj)) return pj;
+
+                        // Stop at Assets or Packages boundary to avoid scanning entire project
+                        if (string.Equals(current.Name, "Assets", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(current.Name, "Packages", StringComparison.OrdinalIgnoreCase))
+                        {
+                            break;
+                        }
+
+                        current = current.Parent;
+                    }
+
+                    // If we ended at Editor folder, try its parent
+                    if (current != null && string.Equals(current.Name, "Editor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var root = current.Parent;
+                        if (root != null)
+                        {
+                            var pj = Path.Combine(root.FullName, "package.json");
+                            if (File.Exists(pj)) return pj;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[VMCInfo] ResolvePackageJsonPath editor resolution failed: {e.Message}");
+            }
+#endif
+            // 3) Fallback to dev path under Assets
+            return defaultAssetsPath;
         }
 
         /// <summary>Semantic version of the package (from package.json).</summary>
