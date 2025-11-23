@@ -1,6 +1,6 @@
 {
   "name": "com.j8910.voxelmarchingcubes",
-  "version": "1.0.0",
+  "version": "0.4.1",
   "displayName": "Voxel Marching Cubes",
   "description": "Core systems and tools for voxel terrain with marching cubes for Unity",
   "unity": "2022.1",

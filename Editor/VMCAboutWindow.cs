@@ -11,12 +11,15 @@ namespace VoxelMarchingCubes.Editor
     /// </summary>
     public sealed class VMCAboutWindow : EditorWindow
     {
-        private const string Title = "Voxel Marching Cubes • About";
+        private const string TitleFallback = "Voxel Marching Cubes • About";
 
         [MenuItem("Tools/Voxel Marching Cubes/About", priority = 1000)]
         public static void ShowWindow()
         {
-            var wnd = GetWindow<VMCAboutWindow>(utility: true, title: Title, focus: true);
+            var dynamicTitle = string.IsNullOrEmpty(VMCInfo.DisplayName)
+                ? TitleFallback
+                : ($"{VMCInfo.DisplayName} • About");
+            var wnd = GetWindow<VMCAboutWindow>(utility: true, title: dynamicTitle, focus: true);
             wnd.minSize = new Vector2(420, 220);
             wnd.maxSize = new Vector2(600, 320);
             wnd.Show();
@@ -27,7 +30,7 @@ namespace VoxelMarchingCubes.Editor
             GUILayout.Space(8);
             using (new GUILayout.VerticalScope("box"))
             {
-                GUILayout.Label("Voxel Marching Cubes", EditorStyles.boldLabel);
+                GUILayout.Label(string.IsNullOrEmpty(VMCInfo.DisplayName) ? "Voxel Marching Cubes" : VMCInfo.DisplayName, EditorStyles.boldLabel);
                 EditorGUILayout.LabelField("Version", VMCInfo.Version);
                 EditorGUILayout.LabelField("Author", VMCInfo.Author);
                 EditorGUILayout.LabelField("Year", VMCInfo.Year);
@@ -36,8 +39,8 @@ namespace VoxelMarchingCubes.Editor
 
             GUILayout.Space(6);
             EditorGUILayout.HelpBox(
-                $"This codebase and tools were authored by {VMCInfo.Author} in {VMCInfo.Year}.\n" +
-                $"Version {VMCInfo.Version}. Thank you for using Voxel Marching Cubes!",
+                $"This package ({VMCInfo.DisplayName}) was authored by {VMCInfo.Author} in {VMCInfo.Year}.\n" +
+                $"Version {VMCInfo.Version}. Thank you for using {VMCInfo.DisplayName}!",
                 MessageType.Info);
 
             GUILayout.FlexibleSpace();
