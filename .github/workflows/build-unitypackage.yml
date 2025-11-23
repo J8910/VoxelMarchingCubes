@@ -1,0 +1,75 @@
+name: Build Unity Package
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v0.4.1, v1.0.0, etc.
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build:
+    name: Build and Release Unity Package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(cat package.json | grep -oP '"version":\s*"\K[^"]+')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
+
+      - name: Create Unity Package Archive
+        run: |
+          mkdir -p build
+          PACKAGE_NAME="VoxelMarchingCubes-v${{ steps.version.outputs.version }}.unitypackage"
+
+          # Create package archive with all necessary files
+          # Include all meta files to preserve Unity asset GUIDs
+          tar -czf "build/$PACKAGE_NAME" \
+            Runtime/ \
+            Editor/ \
+            Tests/ \
+            package.json \
+            package.json.meta \
+            LICENSE \
+            LICENSE.meta \
+            README.md \
+            README.md.meta \
+            CHANGELOG.md \
+            CHANGELOG.md.meta \
+            Runtime.meta \
+            Editor.meta \
+            Tests.meta
+
+          echo "Created package: build/$PACKAGE_NAME"
+          ls -lh build/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## VoxelMarchingCubes ${{ github.ref_name }}
+
+            ### Installation
+            Download the `.unitypackage` file below and extract it into your Unity project's Assets folder.
+
+            Alternatively, you can install this package via the Unity Package Manager:
+            1. Open the Package Manager (Window > Package Manager)
+            2. Click the + button and select "Add package from git URL"
+            3. Enter: `https://github.com/J8910/VoxelMarchingCubes.git#${{ github.ref_name }}`
+
+            ### Changes
+            See [CHANGELOG.md](https://github.com/J8910/VoxelMarchingCubes/blob/main/CHANGELOG.md) for details.
+          files: |
+            build/*.unitypackage
+          draft: false
+          prerelease: false
