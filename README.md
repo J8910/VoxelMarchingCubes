@@ -26,7 +26,6 @@ A complete Unity package for creating dynamic, editable voxel terrain using the 
 | Chunk-based Terrain System | ✅ Complete |
 | Runtime Editing Tools | ✅ Complete |
 | Burst Jobs Optimization | ✅ Complete |
-| Custom Editor Tools | ✅ Complete |
 | Dedicated Chunk Grid System | 🚧 Planned Refactor |
 | Documentation | 🚧 In Progress |
 | Example Scenes | 📋 Planned |
