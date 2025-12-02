@@ -1,3 +1,5 @@
+**This project is currently under active development**
+
 # Voxel Marching Cubes
 
 A complete Unity package for creating dynamic, editable voxel terrain using the Marching Cubes algorithm. 
