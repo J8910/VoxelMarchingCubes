@@ -6,6 +6,7 @@ A complete Unity package for creating dynamic, editable voxel terrain using the 
 
 ![Unity Version](https://img.shields.io/badge/Unity-2022.1%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-WIP-yellow)
 
 ## Features
 
@@ -17,6 +18,21 @@ A complete Unity package for creating dynamic, editable voxel terrain using the 
 - **Buried Objects System**: Logic for objects embedded within terrain
 - **Performance Profiling**: Built-in profiling tools for optimization
 
+## Current Status
+
+| Feature | Status |
+|---------|--------|
+| Core Marching Cubes Algorithm | ✅ Complete |
+| Chunk-based Terrain System | ✅ Complete |
+| Runtime Editing Tools | ✅ Complete |
+| Burst Jobs Optimization | ✅ Complete |
+| Custom Editor Tools | ✅ Complete |
+| Dedicated Chunk Grid System | 🚧 Planned Refactor |
+| Documentation | 🚧 In Progress |
+| Example Scenes | 📋 Planned |
+| Screenshots/Videos | 📋 Planned |
+| Unit Tests | 📋 Planned |
+
 ## Installation
 
 ### Via Unity Package Manager
@@ -24,6 +40,9 @@ A complete Unity package for creating dynamic, editable voxel terrain using the 
 1. Open Unity Package Manager (`Window > Package Manager`)
 2. Click the `+` button and select `Add package from git URL`
 3. Enter: `https://github.com/J8910/VoxelMarchingCubes.git`
+
+> [!NOTE]
+> Sample scenes and example materials will be added in a future update.
 
 ## Quick Start
 
